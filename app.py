@@ -1,5 +1,6 @@
 import random 
 
+from sqlalchemy import or_
 from sqlalchemy.orm import sessionmaker 
 
 from models import User, engine 
@@ -8,18 +9,29 @@ Session = sessionmaker(bind=engine)
 
 session = Session()
 
-# names = ["Alice", "Bob", "Charlie", "David", "Eve"]
+#query all users 
+# users_all = session.query(User).all()
 
-# ages = [25, 30, 35, 40, 45]
+# users_filtered = session.query(User).filter(User.age > 25).all()
 
-# for x in range(20):
-#     user = User(name=random.choice(names), age=random.choice(ages))
-#     session.add(user)
+# users_filtered = session.query(User).filter(User.age >= 25, User.name == "Alice").all()
 
-# session.commit()
+# print("All users: ", len(users_all))
+# print("Filtered users: ", len(users_filtered))
 
-#Query all users ordered by age (ascending) 
-users = session.query(User).order_by(User.age.desc(), User.name).all()
+
+# users = session.query(User).filter_by(age = 30).all()
+
+# for user in users:
+    # print(f"User: {user.name}, age: {user.age}")
+
+# users = session.query(User).where(User.age >= 30).all()
+
+# for user in users:
+    # print(f"User: {user.name}, age: {user.age}")
+
+# users = session.query(User).where(or_(User.age >= 30, User.name == "Alice")).all()
+users = session.query(User).where((User.age >= 30) | (User.name == "Alice")).all()
 
 for user in users:
-    print(f"Use age: {user.age}, name: {user.name}, id: {user.id}")
+    print(f"User: {user.name}, age: {user.age}")
