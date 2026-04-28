@@ -1,6 +1,6 @@
 import random 
 
-from sqlalchemy import or_
+from sqlalchemy import func
 from sqlalchemy.orm import sessionmaker 
 
 from models import User, engine 
@@ -9,29 +9,37 @@ Session = sessionmaker(bind=engine)
 
 session = Session()
 
-#query all users 
-# users_all = session.query(User).all()
+#group user by age 
+# users = session.query(User.age, func.count(User.id)).group_by(User.age).all()
 
-# users_filtered = session.query(User).filter(User.age > 25).all()
+# print(users)
 
-# users_filtered = session.query(User).filter(User.age >= 25, User.name == "Alice").all()
+# users_tuple = (
+    # session.query(User.age, func.count(User.id))
+#     # .filter(User.age > 30)
+#     .filter(User.age < 50)
+#     .group_by(User.age)
+#     .order_by(User.age)
+#     .all()
+# )
 
-# print("All users: ", len(users_all))
-# print("Filtered users: ", len(users_filtered))
+# for user in users_tuple:
+#     print(f"Age: {user[0]}, count: {user[1]}")
 
 
-# users = session.query(User).filter_by(age = 30).all()
+only_alice = True 
+group_by_age = True 
 
-# for user in users:
-    # print(f"User: {user.name}, age: {user.age}")
 
-# users = session.query(User).where(User.age >= 30).all()
+users = session.query(User)
 
-# for user in users:
-    # print(f"User: {user.name}, age: {user.age}")
+if only_alice:
+    users = users.filter(User.name == "Alice")
 
-# users = session.query(User).where(or_(User.age >= 30, User.name == "Alice")).all()
-users = session.query(User).where((User.age >= 30) | (User.name == "Alice")).all()
+if group_by_age: 
+    users = users.group_by(User.age)
+
+users = users.all()
 
 for user in users:
-    print(f"User: {user.name}, age: {user.age}")
+    print(f"Name: {user.name}, Age: {user.age}")
