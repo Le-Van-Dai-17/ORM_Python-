@@ -1,86 +1,127 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, create_engine
-from sqlalchemy.orm import relationship, sessionmaker, declarative_base 
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, create_engine
+from sqlalchemy.orm import relationship, sessionmaker, declarative_base
+from datetime import datetime 
 
 db_url = "sqlite:///database.db"
 
 engine = create_engine(db_url)
 
+Base = declarative_base()
+
 Session = sessionmaker(bind=engine)
 session = Session()
 
-Base = declarative_base()
 
-# class User(Base):
-#     __tablename__ = 'users'
+# class StudentCourse(Base):
+#     __tablename__ = 'student_course'
+#     id = Column(Integer, primary_key=True)
+#     student_id = Column('student_id', Integer, ForeignKey('students.id'))
+#     course_id = Column('course_id', Integer, ForeignKey('courses.id'))
+
+# class Student(Base):
+#     __tablename__ = 'students'
 #     id = Column(Integer, primary_key=True)
 #     name = Column(String)
-#     address = relationship("Address", back_populates="user", uselist=False)
+#     courses = relationship("Course", secondary="student_course", back_populates="students")
 
-# class Address(Base):
-#     __tablename__ = "addresses"
+# class Course(Base):
+#     __tablename__ = 'courses'
 #     id = Column(Integer, primary_key=True)
-#     email = Column(String, unique=True)
-#     user_id = Column(Integer, ForeignKey("users.id"))
-#     user = relationship("User", back_populates="address")
+#     title = Column(String)
+#     students = relationship("Student", secondary="student_course", back_populates="courses")
 
-Base.metadata.create_all(engine)
+# Base.metadata.create_all(engine)
 
-# new_user = User(name="John Doe")
-# new_address = Address(email="john@example.com", user=new_user)
 
-# session.add(new_user)
-# session.add(new_address)
+# math = Course(title="Mathematics")
+# physics = Course(title="Physics")
+# bill = Student(name="Bill", courses=[math, physics])
+# rob = Student(name="Rob", courses=[math])
+
+# session.add_all([math, physics, bill, rob])
 # session.commit()
 
+# rob = session.query(Student).filter_by(name="Bill").first()
+# courses = [courses.title for courses in rob.courses]
+# print(f"Rob's courses: {', '.join(courses)}")
 
-# print(new_user.name)
-# print(new_address.email)
-# print(new_user.address.email)
-# print(new_address.user.name)
+# class Appointment(Base):
+#     __tablename__ = 'appointments'
+#     id = Column(Integer, primary_key=True)
+#     doctor_id = Column(Integer, ForeignKey('doctors.id'))
+#     patient_id = Column(Integer, ForeignKey('patients.id'))
+#     appointment_date = Column(DateTime, default=datetime.utcnow)
+#     notes = Column(String)
+
+#     doctor = relationship("Doctor", backref="appointments")
+#     patient = relationship("Patient", backref="appointments")
+
+# class Doctor(Base):
+#     __tablename__ = 'doctors'
+#     id = Column(Integer, primary_key=True)
+#     name = Column(String)
+#     specialty = Column(String) 
 
 
-# user = session.query(User).filter_by(name="John Doe").first()
-# print(f"User: {user.name}, Email: {user.address.email}")
+# class Patient(Base):
+#     __tablename__ = 'patients'
+#     id = Column(Integer, primary_key=True)
+#     name = Column(String)
+#     dob = Column(DateTime)
+
+# Base.metadata.create_all(engine)
+
+# dr_smith = Doctor(name="Dr. Smith", specialty="Cardiology")
+# john_doe = Patient(name="John Doe", dob=datetime(1990, 1, 1))
+# appointment = Appointment(doctor=dr_smith, patient=john_doe, notes='Routine check-up')
+
+# session.add_all([dr_smith, john_doe, appointment])
+# session.commit()
+
+# appointments_for_dr_smith = session.query(Appointment).filter(Appointment.doctor.has(name="Dr. Smith")).all()
 
 
-class NodeAssociation(Base):
-    __tablename__ = "node_association"
+# print("Dr. Smith's appointments")
+# print(appointments_for_dr_smith) 
+
+
+class UserAssociation(Base):
+    __tablename__ = 'user_associations'
     id = Column(Integer, primary_key=True)
 
-    current_node_id = Column(Integer, ForeignKey("nodes.id"))
-    next_node_id = Column(Integer, ForeignKey("nodes.id"))
+    follower_id = Column(Integer, ForeignKey('users.id'))
+    following_id = Column(Integer, ForeignKey('users.id'))
 
 
-class Node(Base):
-    __tablename__ = "nodes"
+class User(Base):
+    __tablename__ = 'users'
 
     id = Column(Integer, primary_key=True)
-    value = Column(Integer, nullable=False)
+    name = Column(String, nullable=False)
 
-    next_node = relationship(
-        "Node",
-        secondary="node_association",
-        primaryjoin="NodeAssociation.current_node_id == Node.id",
-        secondaryjoin="NodeAssociation.next_node_id == Node.id",
-        uselist=False
+    following = relationship(
+        'User',
+        secondary='user_associations',
+        primaryjoin="UserAssociation.follower_id == User.id",
+        secondaryjoin="UserAssociation.following_id == User.id",
+        backref='followers'
     )
 
     def __repr__(self):
-        return f"<Node value={self.value}>"
+        return f"<User: {self.name}>"
     
 Base.metadata.create_all(engine)
 
-node1 = Node(value=1)
-node2 = Node(value=2)
-node3 = Node(value=3)
+user1 = User(name="John")
+user2 = User(name="Rob")
+user3 = User(name="Kyle")
 
-node1.next_node = node2
-node2.next_node = node3
-node3.next_node = node1
+user1.following.append(user2)
+user2.following.append(user1)
+user3.following.append(user1)
 
-session.add_all([node1, node2, node3])
-session.commit()
+session.add_all([user1, user2, user3])
+session.commit()    
 
-print(node1)
-print(node2)
-print(node3)
+print(f"{user1.name} is following {user1.following}")
+print(f"{user1.name} is followed by {user1.followers}")
